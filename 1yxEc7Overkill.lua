@@ -1,5 +1,5 @@
 
-script_key = "3415524fd01acc9fd62d3bb6a0e11718638fbd43a43d8da594a400836249e199"
+script_key = "KEYAUTH-HVEEoX-jrWmnq-2R0CAs-QQ75TY-XfEw58-KqTkMl"
 
 -- =======================================================
 -- 🔒 KeyAuth 伺服器驗證核心邏輯 (直接在本地執行，免除 GitHub 404 風險)
