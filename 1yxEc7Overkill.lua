@@ -1,5 +1,5 @@
 -- =======================================================
--- 🔒 檔案 A：獨立驗證加載器 (存放在左邊分頁倉庫中)
+-- 🔒 檔案 A：獨立驗證加載器 (內建防抓包、自動解碼機制)
 -- =======================================================
 
 -- 1. 自動讀取玩家在執行器最頂端輸入的 script_key
@@ -32,14 +32,12 @@ local HttpService = game:GetService("HttpService")
 local current_hwid = gethwid and gethwid() or (syn and syn.get_hwid and syn.get_hwid()) or "UNKNOWN_HWID"
 
 local TokenConfig = {
-    -- 您的全新隱形權杖鑰匙
-    Token = "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", 
+    Token = "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", 
     Owner = "1yxEc7",
-    -- 🎯 鎖定右邊分頁存放 139KB 亂碼的主功能倉庫
-    Repo = "1yxEc7-skin-changer-v1-code"
+    Repo = "1yxEc7-skin-changer-v1-code" -- 右邊分頁倉庫名稱
 }
 
--- 調用 JSON 資料庫路徑 (存放在右邊倉庫中)
+-- 調用 JSON 資料庫路徑
 local check_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success, hwid_data_raw = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
@@ -56,28 +54,20 @@ local success, hwid_data_raw = pcall(function()
 end)
 
 local db = {}
-local file_sha = ""
-
--- 讀取與解析硬體特徵碼資料庫
 if success and hwid_data_raw and not hwid_data_raw:find("404") and not hwid_data_raw:find("Not Found") then
     local status, decoded = pcall(function() return HttpService:JSONDecode(hwid_data_raw) end)
-    if status then
-        db = decoded
-    end
+    if status then db = decoded end
     
     if db[UserKey] then
-        -- 如果這個 Key 已經記錄過硬體碼，進行嚴格比對
         if db[UserKey] ~= current_hwid then
             game.Players.LocalPlayer:Kick("\n\n[安全防護]\n硬體特徵碼不符！\n此 KEY 已綁定其他電腦。如需更換電腦，請至 Discord 申請 Reset（每 3 天可申請一次）。\n")
             return
         end
     else
-        -- 🌟 第一次登入自動註冊硬體碼
         db[UserKey] = current_hwid
         print("[系統提示] 全新 Key，已成功自動鎖定您的電腦硬體特徵！")
     end
 else
-    -- 如果後台完全沒有這個檔案（第一次執行），自動初始化建立第一筆資料
     db[UserKey] = current_hwid
     print("[系統提示] 初始化硬體資料庫成功！")
 end
@@ -85,26 +75,35 @@ end
 -- =======================================================
 -- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載右邊分頁的 139KB 主程式
 -- =======================================================
+-- 利用官方指定標頭，強迫 GitHub API 直接回傳純 Lua Raw 內容
 local main_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success_main, main_content = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
     if req then
-        return req({
+        local res = req({
             Url = main_url,
             Method = "GET",
-            Headers = {["Authorization"] = "token " .. TokenConfig.Token, ["Accept"] = "application/vnd.github.v3.raw"}
-        }).Body
+            Headers = {
+                ["Authorization"] = "token " .. TokenConfig.Token,
+                ["Accept"] = "application/vnd.github.v3.raw" -- ✨ 強制提取純文本關鍵標頭
+            }
+        })
+        return res.Body
     else
-        return game:HttpGet(main_url, true, {["Authorization"] = "token " .. TokenConfig.Token, ["Accept"] = "application/vnd.github.v3.raw"})
+        -- 傳統備用方案（Potassium 環境穿透）
+        return game:HttpGet(main_url, true, {
+            ["Authorization"] = "token " .. TokenConfig.Token,
+            ["Accept"] = "application/vnd.github.v3.raw"
+        })
     end
 end)
 
 if success_main and main_content and main_content ~= "" and not main_content:find("message") and not main_content:find("404") then
     local mainScript = loadstring(main_content)
     if mainScript then
-        mainScript() -- 🚀 完美無縫拉起右邊分頁的 139KB 純混淆主要功能選單！
+        mainScript() -- 🚀 完美拉起右邊私密倉庫的 139KB 主功能選單！
     else
-        warn("主程式解密編譯失敗，請確認右邊倉庫檔案內是否為純 Lua 代碼")
+        warn("主程式解密編譯失敗，請確認右邊分頁檔案內是否為純 Lua 代碼")
     end
 else
     game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n無法從遠端私密倉庫抓取主程式，請確認右邊分頁的檔名是否為 1yxEc7Overkill.lua ！\n")
