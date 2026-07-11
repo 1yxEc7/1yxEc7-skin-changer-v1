@@ -32,7 +32,8 @@ local HttpService = game:GetService("HttpService")
 local current_hwid = gethwid and gethwid() or (syn and syn.get_hwid and syn.get_hwid()) or "UNKNOWN_HWID"
 
 local TokenConfig = {
-    Token = "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", 
+    -- ✨ 這裡已完美換上您剛生成的全新隱形總鑰匙！
+    Token = "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", 
     Owner = "1yxEc7",
     Repo = "1yxEc7-skin-changer-v1-code"
 }
@@ -83,7 +84,6 @@ end
 -- =======================================================
 -- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載 139KB 主程式
 -- =======================================================
--- ✨ 這裡已完美修正為您真實的大寫檔名：1yxEc7Overkill.lua
 local main_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success_main, main_content = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
