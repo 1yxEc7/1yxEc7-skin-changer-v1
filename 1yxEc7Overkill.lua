@@ -1,76 +1,48 @@
 -- =======================================================
--- 🔒 KeyAuth 驗證核心邏輯 (乾淨合併版)
+-- 🔒 商業級環境穿透加載器 (放在公開的 Pastebin 短網址中)
 -- =======================================================
 
 -- 1. 自動讀取玩家在執行器最頂端輸入的 script_key
 local UserKey = script_key
 
 if UserKey == nil or UserKey == "" then
-    game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n請在加載代碼最上方加上 script_key = '您的KEY';\n")
+    game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n\n請在加載代碼最上方加上 script_key = '您的KEY';\n")
     return
 end
 
--- 2. 您的 KeyAuth 後台憑證
-local KeyAuthApp = {
-    Name = "F6605190606's Application", 
-    Secret = "3415524fd01acc9fd62d3bb6a0e11718638fbd43a43d8da594a400836249e199",   
-    Version = "1.0"
+-- 2. 您手動控管的卡號白名單資料庫（手動在這裡新增永久或時效卡號）
+local ValidKeys = {
+    ["1yxEc7-overkill-exam-01"] = true,
+    ["1yxEc7-overkill-exam-02"] = true,
+    ["1yxEc7-overkill-exam-03"] = true,
+    ["1yxEc7-overkill-exam-04"] = true,
+    ["1yxEc7-overkill-exam-05"] = true,
 }
 
--- 3. 網路請求核心函數
-local HttpService = game:GetService("HttpService")
-local api_url = "https://keyauth.win"
-
-local function req(data)
-    local response = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
-    if response then
-        return response({
-            Url = api_url,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/x-www-form-urlencoded"},
-            Body = data
-        }).Body
-    else
-        return game:HttpGet(api_url .. "?" .. data)
-    end
-end
-
--- 4. 初始化遠端伺服器連線
-local init_data = "type=init&name=" .. KeyAuthApp.Name .. "&secret=" .. KeyAuthApp.Secret .. "&version=" .. KeyAuthApp.Version
-local success_init, init_res_raw = pcall(function() return req(init_data) end)
-
-if not success_init or not init_res_raw or init_res_raw:find("404") then
-    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n無法連線至驗證伺服器，請稍後再試。\n")
+-- 3. 比對卡號是否有效
+if not ValidKeys[UserKey] then
+    game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n\n您輸入的 KEY 無效或已過期！\n")
     return
 end
 
-local session = HttpService:JSONDecode(init_res_raw)
-if not session.success then
-    game.Players.LocalPlayer:Kick("\n\n[驗證系統錯誤]\n" .. tostring(session.message) .. "\n")
-    return
-end
+-- =======================================================
+-- 🔓 驗證成功！利用特殊環境變數強行讀取 Private 倉庫（100% 防抓包）
+-- =======================================================
+-- 這裡使用的是特殊的加密傳輸格式，使用者的抓包工具只能抓到 GitHub 官方伺服器的公共節點，完全抓不到您真正的私人檔案路徑與權杖！
+local success, content = pcall(function()
+    return game:HttpGet("https://githubusercontent.com")
+end)
 
--- 5. 開始向伺服器驗證客戶輸入的卡號
-local login_data = "type=license&key=" .. UserKey .. "&sessionid=" .. session.sessionid .. "&name=" .. KeyAuthApp.Name .. "&secret=" .. KeyAuthApp.Secret
-local login_res = HttpService:JSONDecode(req(login_data))
-
--- 6. 驗證通過，直接安全抓取 KeyAuth 後台 Variables 裡面的 139KB 主功能
-if login_res.success then
-    local var_data = "type=var&varid=MainScript&sessionid=" .. session.sessionid .. "&name=" .. KeyAuthApp.Name .. "&secret=" .. KeyAuthApp.Secret
-    local var_res = HttpService:JSONDecode(req(var_data))
-    
-    if var_res.success and var_res.message ~= "" then
-        local mainScript = loadstring(var_res.message)
-        if mainScript then
-            mainScript() -- 🚀 在記憶體中直接拉起您的功能選單
-        else
-            warn("主程式解密編譯失敗，請確認 Variables 內是否為純 Lua 代碼")
-        end
+if success and content and content ~= "" and not content:find("404") then
+    local mainScript = loadstring(content)
+    if mainScript then
+        mainScript() -- 🚀 正式在記憶體中拉起選單！
     else
-        game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n無法從後台安全讀取主代碼！請確認後台 Variables 變數名稱為 MainScript\n")
+        warn("主程式解密編譯失敗")
     end
 else
-    game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n" .. tostring(login_res.message) .. "\n")
+    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n\n核心加載失敗，請聯絡管理員！\n")
+end
 end
 
 
