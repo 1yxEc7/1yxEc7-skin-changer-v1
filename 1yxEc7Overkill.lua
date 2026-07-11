@@ -33,7 +33,7 @@ local current_hwid = gethwid and gethwid() or (syn and syn.get_hwid and syn.get_
 
 local TokenConfig = {
     -- ✨ 這裡已一字不漏精準貼上您最新截圖中這串全新的隱形總鑰匙！
-    Token = "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", 
+    Token = "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", 
     Owner = "1yxEc7",
     Repo = "1yxEc7-skin-changer-v1-code" -- 🎯 鎖定右邊分頁存放 139KB 亂碼的主程式倉庫
 }
