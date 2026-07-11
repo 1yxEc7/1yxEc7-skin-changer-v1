@@ -30,7 +30,7 @@ end
 -- =======================================================
 -- 🔓 驗證成功！正式執行您原本的純混淆主要程式碼 (已移除開頭註解與結尾錯誤的 else)
 -- =======================================================
-loadstring(game:HttpGet("https://raw.githubusercontent.com/1yxEc7/1yxEc7-skin-changer-v1-code/refs/heads/main/1yxEc7-overkill-code.lua"))();
+loadstring(game:HttpGet("https://raw.githubusercontent.com/1yxEc7/1yxEc7-skin-changer-v1-code/refs/heads/main/1yxEc7overkillcode.lua"))();
 
 
 
