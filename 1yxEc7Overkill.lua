@@ -1,9 +1,17 @@
 
-script_key = "KEYAUTH-HVEEoX-jrWmnq-2R0CAs-QQ75TY-XfEw58-KqTkMl"
+local UserKey = script_key
 
--- =======================================================
--- 🔒 KeyAuth 伺服器驗證核心邏輯 (直接在本地執行，免除 GitHub 404 風險)
--- =======================================================
+if UserKey == nil or UserKey == "" then
+    game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n請在加載代碼最上方加上 script_key = '您的KEY';\n")
+    return
+end
+
+local KeyAuthApp = {
+    Name = "F6605190606's Application", 
+    Secret = "3415524fd01acc9fd62d3bb6a0e11718638fbd43a43d8da594a400836249e199",   
+    Version = "1.0"
+}
+
 local UserKey = script_key
 if UserKey == nil or UserKey == "" then
     game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n請在加載代碼最上方加上 script_key = '您的KEY';\n")
