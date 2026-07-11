@@ -37,7 +37,7 @@ local TokenConfig = {
     Repo = "1yxEc7-skin-changer-v1-code"
 }
 
--- ✨ 修正一：改回正確的 GitHub API 私密內容調用路徑
+-- 使用正確的 GitHub API 連線路徑調用 JSON 資料庫
 local check_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success, hwid_data_raw = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
@@ -58,7 +58,6 @@ local file_sha = ""
 
 -- 讀取與解析硬體特徵碼資料庫
 if success and hwid_data_raw and not hwid_data_raw:find("404") and not hwid_data_raw:find("Not Found") then
-    -- 只有確保抓到的是 JSON 時才解析，防止崩潰
     local status, decoded = pcall(function() return HttpService:JSONDecode(hwid_data_raw) end)
     if status then
         db = decoded
@@ -76,7 +75,7 @@ if success and hwid_data_raw and not hwid_data_raw:find("404") and not hwid_data
         print("[系統提示] 全新 Key，已成功自動鎖定您的電腦硬體特徵！")
     end
 else
-    -- 如果後台完全沒有這個檔案（第一次執行），自動把當前玩家記錄為第一筆資料
+    -- 如果後台完全沒有這個檔案（第一次執行），自動初始化建立第一筆資料
     db[UserKey] = current_hwid
     print("[系統提示] 初始化硬體資料庫成功！")
 end
@@ -84,7 +83,7 @@ end
 -- =======================================================
 -- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載 139KB 主程式
 -- =======================================================
--- ✨ 修正二：修正主程式的 API 正確調用路徑
+-- ✨ 這裡已完美修正為您真實的大寫檔名：1yxEc7Overkill.lua
 local main_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success_main, main_content = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
@@ -102,11 +101,10 @@ end)
 if success_main and main_content and main_content ~= "" and not main_content:find("message") and not main_content:find("404") then
     local mainScript = loadstring(main_content)
     if mainScript then
-        mainScript() -- 🚀 完美拉起主選單
+        mainScript() -- 🚀 完美無縫拉起主功能選單！
     else
         warn("主程式解密編譯失敗，請確認 139KB 檔案內是否為純 Lua 代碼")
     end
 else
-    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n無法從遠端私密倉庫抓取主程式，請確認您的主程式檔名是否為 1yxEc7overkillcode.lua ！\n")
+    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n無法從遠端私密倉庫抓取主程式，請確認您的主程式檔名是否為 1yxEc7Overkill.lua ！\n")
 end
-
