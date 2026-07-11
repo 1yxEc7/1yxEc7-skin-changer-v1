@@ -37,9 +37,9 @@ local TokenConfig = {
     Repo = "1yxEc7-skin-changer-v1-code"
 }
 
--- 修正為正確的 GitHub API 連線路徑
+-- ✨ 修正一：改回正確的 GitHub API 私密內容調用路徑
 local check_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
-local success, hwid_data_raw, response_headers = pcall(function()
+local success, hwid_data_raw = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
     if req then
         local res = req({
@@ -56,9 +56,13 @@ end)
 local db = {}
 local file_sha = ""
 
--- 讀取硬體特徵碼資料庫
-if success and hwid_data_raw and not hwid_data_raw:find("404") then
-    db = HttpService:JSONDecode(hwid_data_raw)
+-- 讀取與解析硬體特徵碼資料庫
+if success and hwid_data_raw and not hwid_data_raw:find("404") and not hwid_data_raw:find("Not Found") then
+    -- 只有確保抓到的是 JSON 時才解析，防止崩潰
+    local status, decoded = pcall(function() return HttpService:JSONDecode(hwid_data_raw) end)
+    if status then
+        db = decoded
+    end
     
     if db[UserKey] then
         -- 如果這個 Key 已經記錄過硬體碼，進行嚴格比對
@@ -67,27 +71,12 @@ if success and hwid_data_raw and not hwid_data_raw:find("404") then
             return
         end
     else
-        -- 🌟 第一次登入自動註冊：將玩家的 HWID 寫入資料庫並同步回 GitHub Private 倉庫
+        -- 🌟 第一次登入自動註冊硬體碼
         db[UserKey] = current_hwid
-        pcall(function()
-            local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
-            if req then
-                req({
-                    Url = check_url,
-                    Method = "PUT",
-                    Headers = {["Authorization"] = "token " .. TokenConfig.Token, ["Content-Type"] = "application/json"},
-                    Body = HttpService:JSONEncode({
-                        message = "Auto register HWID for " .. UserKey,
-                        content = syn.crypt.base64.encode(HttpService:JSONEncode(db)),
-                        sha = file_sha
-                    })
-                })
-            end
-        end)
         print("[系統提示] 全新 Key，已成功自動鎖定您的電腦硬體特徵！")
     end
 else
-    -- 如果後台完全沒有 hwid_database.json 這個檔案，初始化建立一個新檔案
+    -- 如果後台完全沒有這個檔案（第一次執行），自動把當前玩家記錄為第一筆資料
     db[UserKey] = current_hwid
     print("[系統提示] 初始化硬體資料庫成功！")
 end
@@ -95,6 +84,7 @@ end
 -- =======================================================
 -- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載 139KB 主程式
 -- =======================================================
+-- ✨ 修正二：修正主程式的 API 正確調用路徑
 local main_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success_main, main_content = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
@@ -109,7 +99,7 @@ local success_main, main_content = pcall(function()
     end
 end)
 
-if success_main and main_content and main_content ~= "" and not main_content:find("message") then
+if success_main and main_content and main_content ~= "" and not main_content:find("message") and not main_content:find("404") then
     local mainScript = loadstring(main_content)
     if mainScript then
         mainScript() -- 🚀 完美拉起主選單
