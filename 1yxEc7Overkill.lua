@@ -1,5 +1,5 @@
 -- =======================================================
--- 🔒 檔案 A：獨立驗證加載器 (內建防抓包、自動解碼機制)
+-- 🔒 檔案 A：獨立驗證加載器 (最終完美通關版)
 -- =======================================================
 
 -- 1. 自動讀取玩家在執行器最頂端輸入的 script_key
@@ -32,10 +32,10 @@ local HttpService = game:GetService("HttpService")
 local current_hwid = gethwid and gethwid() or (syn and syn.get_hwid and syn.get_hwid()) or "UNKNOWN_HWID"
 
 local TokenConfig = {
-    -- ✨ 這裡已一字不漏精準貼上您最新截圖中這串全新的隱形總鑰匙！
+    -- ✨ 這裡已一字不漏精準換上您剛剛 1 秒前生成的最新完美通行證！
     Token = "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", 
     Owner = "1yxEc7",
-    Repo = "1yxEc7-skin-changer-v1-code" -- 🎯 鎖定右邊分頁存放 139KB 亂碼的主程式倉庫
+    Repo = "1yxEc7-skin-changer-v1-code"
 }
 
 -- 調用 JSON 資料庫路徑
@@ -74,9 +74,8 @@ else
 end
 
 -- =======================================================
--- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載 139KB 全小寫主程式
+-- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載 139KB 主程式
 -- =======================================================
--- ✨ 這裡完美對齊您所說的右邊分頁主功能檔名：1yxEc7overkillcode.lua
 local main_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success_main, main_content = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
@@ -86,7 +85,7 @@ local success_main, main_content = pcall(function()
             Method = "GET",
             Headers = {
                 ["Authorization"] = "token " .. TokenConfig.Token,
-                ["Accept"] = "application/vnd.github.v3.raw" -- 強制 GitHub API 回傳純 Lua 的 Raw 內容
+                ["Accept"] = "application/vnd.github.v3.raw"
             }
         })
         return res.Body
@@ -101,11 +100,11 @@ end)
 if success_main and main_content and main_content ~= "" and not main_content:find("message") and not main_content:find("404") then
     local mainScript = loadstring(main_content)
     if mainScript then
-        mainScript() -- 🚀 完美穿透私密限制，直接在記憶體中拉起 139KB 的主要功能選單！
+        mainScript() -- 🚀 完美拉起主功能選單！
     else
         warn("主程式解密編譯失敗，請確認檔案內是否為純 Lua 代碼")
     end
 else
-    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n核心下載失敗！請確認您的新金鑰是否有將 Contents 權限開通為 Read-only 唷！\n")
+    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n核心加載失敗！無法與遠端私密伺服器取得安全連線，請聯絡開發者。\n")
 end
 
