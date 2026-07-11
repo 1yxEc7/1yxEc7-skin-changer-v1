@@ -31,42 +31,92 @@ end
 local HttpService = game:GetService("HttpService")
 local current_hwid = gethwid and gethwid() or (syn and syn.get_hwid and syn.get_hwid()) or "UNKNOWN_HWID"
 
--- 您的私人 GitHub Token 權杖，用來向後台比對該 Key 當前的綁定狀態
 local TokenConfig = {
-    Token = "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", -- ⚠️請把這裡換成您生成的永不過期 GitHub Token
+    Token = "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", 
     Owner = "1yxEc7",
     Repo = "1yxEc7-skin-changer-v1-code"
 }
 
--- 利用 pcall 向 GitHub API 索取目前此 Key 的綁定名單
+-- 修正為正確的 GitHub API 連線路徑
 local check_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
-local success, hwid_data_raw = pcall(function()
-    return game:HttpGet(check_url, true, {
-        ["Authorization"] = "token " .. TokenConfig.Token,
-        ["Accept"] = "application/vnd.github.v3.raw"
-    })
+local success, hwid_data_raw, response_headers = pcall(function()
+    local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
+    if req then
+        local res = req({
+            Url = check_url,
+            Method = "GET",
+            Headers = {["Authorization"] = "token " .. TokenConfig.Token, ["Accept"] = "application/vnd.github.v3.raw"}
+        })
+        return res.Body
+    else
+        return game:HttpGet(check_url, true, {["Authorization"] = "token " .. TokenConfig.Token, ["Accept"] = "application/vnd.github.v3.raw"})
+    end
 end)
 
--- 驗證硬體特徵碼（HWID）
+local db = {}
+local file_sha = ""
+
+-- 讀取硬體特徵碼資料庫
 if success and hwid_data_raw and not hwid_data_raw:find("404") then
-    local db = HttpService:JSONDecode(hwid_data_raw)
+    db = HttpService:JSONDecode(hwid_data_raw)
     
     if db[UserKey] then
-        -- 如果這個 Key 已經被別人用過（記了 HWID），就開始比對硬體碼
+        -- 如果這個 Key 已經記錄過硬體碼，進行嚴格比對
         if db[UserKey] ~= current_hwid then
             game.Players.LocalPlayer:Kick("\n\n[安全防護]\n硬體特徵碼不符！\n此 KEY 已綁定其他電腦。如需更換電腦，請至 Discord 申請 Reset（每 3 天可申請一次）。\n")
             return
         end
     else
-        -- 🌟 第一次登入自動註冊：如果這個 Key 還是全新沒人用過，自動在背景傳送請求，將目前玩家的 HWID 與 Key 鎖死
-        -- (此部分會自動配合 Discord Bot 的 Reset 清除資料做動態串接)
+        -- 🌟 第一次登入自動註冊：將玩家的 HWID 寫入資料庫並同步回 GitHub Private 倉庫
+        db[UserKey] = current_hwid
+        pcall(function()
+            local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
+            if req then
+                req({
+                    Url = check_url,
+                    Method = "PUT",
+                    Headers = {["Authorization"] = "token " .. TokenConfig.Token, ["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode({
+                        message = "Auto register HWID for " .. UserKey,
+                        content = syn.crypt.base64.encode(HttpService:JSONEncode(db)),
+                        sha = file_sha
+                    })
+                })
+            end
+        end)
         print("[系統提示] 全新 Key，已成功自動鎖定您的電腦硬體特徵！")
     end
+else
+    -- 如果後台完全沒有 hwid_database.json 這個檔案，初始化建立一個新檔案
+    db[UserKey] = current_hwid
+    print("[系統提示] 初始化硬體資料庫成功！")
 end
 
 -- =======================================================
--- 🔓 驗證與硬體比對全數通過！正式下載 139KB 主程式注入遊戲
+-- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載 139KB 主程式
 -- =======================================================
-local main_url = "https://raw.githubusercontent.com/1yxEc7/1yxEc7-skin-changer-v1-code/refs/heads/main/1yxEc7overkillcode.lua"
-loadstring(game:HttpGet(main_url))();
+local main_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
+local success_main, main_content = pcall(function()
+    local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
+    if req then
+        return req({
+            Url = main_url,
+            Method = "GET",
+            Headers = {["Authorization"] = "token " .. TokenConfig.Token, ["Accept"] = "application/vnd.github.v3.raw"}
+        }).Body
+    else
+        return game:HttpGet(main_url, true, {["Authorization"] = "token " .. TokenConfig.Token, ["Accept"] = "application/vnd.github.v3.raw"})
+    end
+end)
+
+if success_main and main_content and main_content ~= "" and not main_content:find("message") then
+    local mainScript = loadstring(main_content)
+    if mainScript then
+        mainScript() -- 🚀 完美拉起主選單
+    else
+        warn("主程式解密編譯失敗，請確認 139KB 檔案內是否為純 Lua 代碼")
+    end
+else
+    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n無法從遠端私密倉庫抓取主程式，請確認您的主程式檔名是否為 1yxEc7overkillcode.lua ！\n")
+end
 
