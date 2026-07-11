@@ -1,8 +1,5 @@
--- =======================================================
--- 🔒 檔案 A：獨立驗證加載器 (全私密、防卡快取秒更新最終完工版)
--- =======================================================
 
--- 1. 自動讀取玩家在執行器最頂端輸入的 script_key
+-- 使用者在最上方輸入的 Key
 local UserKey = script_key
 
 if UserKey == nil or UserKey == "" then
@@ -10,7 +7,7 @@ if UserKey == nil or UserKey == "" then
     return
 end
 
--- 2. 您手動控管的卡號白名單資料庫
+-- 允許的白名單（如果使用者輸入這裡面的 Key，就各別去嘗試解密）
 local ValidKeys = {
     ["1yxEc7-overkill-exam-01"] = true,
     ["1yxEc7-overkill-exam-02"] = true,
@@ -19,94 +16,42 @@ local ValidKeys = {
     ["1yxEc7-overkill-exam-05"] = true,
 }
 
--- 3. 比對卡號是否存在
 if not ValidKeys[UserKey] then
-    game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n您輸入的 KEY 無效或已過期！\n")
+    game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n無效的金鑰 (Key)！\n")
     return
 end
 
--- =======================================================
--- 🛡️ 核心安全性防護：HWID 綁定與比對邏輯 (自動穿透 Private 倉庫)
--- =======================================================
-local HttpService = game:GetService("HttpService")
-local current_hwid = gethwid and gethwid() or (syn and syn.get_hwid and syn.get_hwid()) or "UNKNOWN_HWID"
-
-local TokenConfig = {
-    Token = "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", 
-    Owner = "1yxEc7",
-    Repo = "1yxEc7-skin-changer-v1-code"
-}
-
--- 調用 JSON 資料庫路徑
-local check_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
-local success, hwid_data_raw = pcall(function()
-    local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
-    if req then
-        local res = req({
-            Url = check_url .. "?cb=" .. tostring(os.time()), -- 加上防快取時間戳記
-            Method = "GET",
-            Headers = {["Authorization"] = "token " .. TokenConfig.Token, ["Accept"] = "application/vnd.github.v3.raw"}
-        })
-        return res.Body
-    else
-        return game:HttpGet(check_url .. "?cb=" .. tostring(os.time()), true, {["Authorization"] = "token " .. TokenConfig.Token, ["Accept"] = "application/vnd.github.v3.raw"})
-    end
+-- 1. 從 GitHub 獲取剛才上傳的加密數據 (注意：此時下載下來的是密文)
+-- 建議將 GitHub 的原始代碼打包成動態下載的密文檔
+local success, cipher_text = pcall(function()
+    return game:HttpGet("https://githubusercontent.com")
 end)
 
-local db = {}
-if success and hwid_data_raw and not hwid_data_raw:find("404") and not hwid_data_raw:find("Not Found") then
-    local status, decoded = pcall(function() return HttpService:JSONDecode(hwid_data_raw) end)
-    if status then db = decoded end
-    
-    if db[UserKey] then
-        if db[UserKey] ~= current_hwid then
-            game.Players.LocalPlayer:Kick("\n\n[安全防護]\n硬體特徵碼不符！\n此 KEY 已綁定其他電腦。如需更換電腦，請至 Discord 申請 Reset（每 3 天可申請一次）。\n")
-            return
-        end
-    else
-        db[UserKey] = current_hwid
-        print("[系統提示] 全新 Key，已成功自動鎖定您的電腦硬體特徵！")
-    end
-else
-    db[UserKey] = current_hwid
-    print("[系統提示] 初始化硬體資料庫成功！")
+if not success or not cipher_text then
+    game.Players.LocalPlayer:Kick("\n\n[網路錯誤]\n無法連接至驗證伺服器！\n")
+    return
 end
 
--- =======================================================
--- 🔓 驗證與硬體比對全數通過！利用「防快取機制」強行秒速更新、下載 139KB 主程式
--- =======================================================
-local main_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
-local success_main, main_content = pcall(function()
-    local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
-    
-    -- 🌟 核心關鍵：在網址後面強行注入 os.time() 時間戳記，徹底摧毀 GitHub 官方伺服器的快取緩存，實現一秒同步更新！
-    local anti_cache_url = main_url .. "?cb=" .. tostring(os.time())
-    
-    if req then
-        local res = req({
-            Url = anti_cache_url,
-            Method = "GET",
-            Headers = {
-                ["Authorization"] = "token " .. TokenConfig.Token,
-                ["Accept"] = "application/vnd.github.v3.raw"
-            }
-        })
-        return res.Body
-    else
-        return game:HttpGet(anti_cache_url, true, {
-            ["Authorization"] = "token " .. TokenConfig.Token,
-            ["Accept"] = "application/vnd.github.v3.raw"
-        })
-    end
-end)
+-- 將下載下來的字串轉回 table（假設您在 GitHub 存的是數值字串如 "11,22,33"）
+local encrypted_data = {}
+for num in string.gmatch(cipher_text, "[^,]+") do
+    table.insert(encrypted_data, tonumber(num))
+end
 
-if success_main and main_content and main_content ~= "" and not main_content:find("message") and not main_content:find("404") then
-    local mainScript = loadstring(main_content)
-    if mainScript then
-        mainScript() -- 🚀 完美拉起全私密、秒同步的 139KB 核心功能選單！
-    else
-        warn("主程式解密編譯失敗，請確認檔案內是否為純 Lua 代碼")
-    end
+-- 2. 使用 UserKey 進行解密
+local decrypted = {}
+for i = 1, #encrypted_data do
+    local b = encrypted_data[i]
+    local k = string.byte(UserKey, ((i - 1) % #UserKey) + 1)
+    table.insert(decrypted, string.char(b ~ k))
+end
+local source_code = table.concat(decrypted)
+
+-- 3. 執行解密後的代碼
+local run_script, err = loadstring(source_code)
+if run_script then
+    run_script()
 else
-    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n核心下載失敗！無法與遠端私密伺服器取得安全連線，請聯絡開發者。\n")
+    -- 如果黑客隨便改了一個在 ValidKeys 裡的 Key，但不是當初用來加密的那個 Key，解出來會是亂碼，loadstring 就會失敗
+    game.Players.LocalPlayer:Kick("\n\n[驗證失敗]\n代碼損壞或 Key 權限不符！\n")
 end
