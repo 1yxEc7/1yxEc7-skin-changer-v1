@@ -1,5 +1,5 @@
 -- 1. 正確讀取不加 _G 的標準全域變數 script_key
-local UserKey = script_key or _G.script_key
+local UserKey = script_key or script_key
 
 -- 2. 檢查使用者有沒有在代碼最上方加上 Key
 if UserKey == nil or UserKey == "" then
