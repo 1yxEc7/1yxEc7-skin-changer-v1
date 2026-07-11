@@ -1,5 +1,5 @@
 -- =======================================================
--- 🔒 商業級全私密加載器 (內建 HWID 自動記硬體碼機制)
+-- 🔒 檔案 A：獨立驗證加載器 (存放在左邊分頁倉庫中)
 -- =======================================================
 
 -- 1. 自動讀取玩家在執行器最頂端輸入的 script_key
@@ -26,19 +26,20 @@ if not ValidKeys[UserKey] then
 end
 
 -- =======================================================
--- 🛡️ 核心安全性防護：HWID 綁定與比對邏輯 (自動穿透 Private 倉庫)
+-- 🛡️ 核心安全性防護：HWID 綁定與比對邏輯 
 -- =======================================================
 local HttpService = game:GetService("HttpService")
 local current_hwid = gethwid and gethwid() or (syn and syn.get_hwid and syn.get_hwid()) or "UNKNOWN_HWID"
 
 local TokenConfig = {
-    -- ✨ 這裡已完美換上您剛生成的全新隱形總鑰匙！
-    Token = "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", 
+    -- 您的全新隱形權杖鑰匙
+    Token = "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", 
     Owner = "1yxEc7",
+    -- 🎯 鎖定右邊分頁存放 139KB 亂碼的主功能倉庫
     Repo = "1yxEc7-skin-changer-v1-code"
 }
 
--- 使用正確的 GitHub API 連線路徑調用 JSON 資料庫
+-- 調用 JSON 資料庫路徑 (存放在右邊倉庫中)
 local check_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success, hwid_data_raw = pcall(function()
     local req = json or (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request)
@@ -82,7 +83,7 @@ else
 end
 
 -- =======================================================
--- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載 139KB 主程式
+-- 🔓 驗證與硬體比對全數通過！強行穿透 Private 倉庫下載右邊分頁的 139KB 主程式
 -- =======================================================
 local main_url = string.format("https://github.com", TokenConfig.Owner, TokenConfig.Repo)
 local success_main, main_content = pcall(function()
@@ -101,10 +102,10 @@ end)
 if success_main and main_content and main_content ~= "" and not main_content:find("message") and not main_content:find("404") then
     local mainScript = loadstring(main_content)
     if mainScript then
-        mainScript() -- 🚀 完美無縫拉起主功能選單！
+        mainScript() -- 🚀 完美無縫拉起右邊分頁的 139KB 純混淆主要功能選單！
     else
-        warn("主程式解密編譯失敗，請確認 139KB 檔案內是否為純 Lua 代碼")
+        warn("主程式解密編譯失敗，請確認右邊倉庫檔案內是否為純 Lua 代碼")
     end
 else
-    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n無法從遠端私密倉庫抓取主程式，請確認您的主程式檔名是否為 1yxEc7Overkill.lua ！\n")
+    game.Players.LocalPlayer:Kick("\n\n[系統錯誤]\n無法從遠端私密倉庫抓取主程式，請確認右邊分頁的檔名是否為 1yxEc7Overkill.lua ！\n")
 end
